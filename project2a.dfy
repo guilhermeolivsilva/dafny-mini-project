@@ -87,40 +87,49 @@ class Message
   }
 }
 
-// //==========================================================
-// //  Mailbox
-// //==========================================================
-// // Each Mailbox has a name, which is a string. Its main content is a set of messages.
-// class Mailbox {
-//   var messages: set<Message>
-//   var name: string
+//==========================================================
+//  Mailbox
+//==========================================================
+// Each Mailbox has a name, which is a string. Its main content is a set of messages.
+class Mailbox {
+  var messages: set<Message>
+  var name: string
 
-//   // Creates an empty mailbox with name n
-//   constructor (n: string)
-//   {
-//     name := n;
-//     messages := {};
-//   }
+  // Creates an empty mailbox with name n
+  constructor (n: string)
+    ensures name == n
+    ensures messages == {}
+  {
+    name := n;
+    messages := {};
+  }
 
-//   // Adds message m to the mailbox
-//   method add(m: Message)
-//   {
-//     messages := { m } + messages;
-//   }
+  // Adds message m to the mailbox
+  method add(m: Message)
+    modifies this
+    ensures m in messages
+    ensures messages == old(messages) + {m}
+  {
+    messages := { m } + messages;
+  }
 
-//   // Removes message m from mailbox
-//   // m need not be in the mailbox
-//   method remove(m: Message)
-//   {
-//     messages := messages - { m };
-//   }
+  // Removes message m from mailbox. m must not be in the mailbox.
+  method remove(m: Message)
+    modifies this
+    ensures m !in messages
+    ensures messages == old(messages) - {m}
+  {
+    messages := messages - { m };
+  }
 
-//   // Empties the mailbox messages
-//   method empty()
-//   {
-//     messages := {};
-//   }
-// }
+  // Empties the mailbox messages
+  method empty()
+    modifies this
+    ensures messages == {}
+  {
+    messages := {};
+  }
+}
 
 // //==========================================================
 // //  MailApp
