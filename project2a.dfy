@@ -131,92 +131,109 @@ class Mailbox {
   }
 }
 
-// //==========================================================
-// //  MailApp
-// //==========================================================
-// class MailApp {
-//   // abstract field for user defined boxes
-//   ghost var userboxes: set<Mailbox>
+//==========================================================
+//  MailApp
+//==========================================================
+class MailApp {
+  // abstract field for user defined boxes
+  ghost var userboxes: set<Mailbox>
 
-//   // the inbox, drafts, trash and sent are both abstract and concrete
-//   var inbox: Mailbox
-//   var drafts: Mailbox
-//   var trash: Mailbox
-//   var sent: Mailbox
+  // the inbox, drafts, trash and sent are both abstract and concrete
+  var inbox: Mailbox
+  var drafts: Mailbox
+  var trash: Mailbox
+  var sent: Mailbox
 
-//   // userboxList implements userboxes
-//   var userboxList: seq<Mailbox>
+  // userboxList implements userboxes
+  var userboxList: seq<Mailbox>
 
-//   // Class invariant
-//   ghost predicate Valid()
-//   {
-//     //----------------------------------------------------------
-//     // Abstract state invariants
-//     //----------------------------------------------------------
-//     // all predefined mailboxes (inbox, ..., sent) are distinct
+  // Class invariant
+  ghost predicate Valid()
+    reads this
+  {
+    //----------------------------------------------------------
+    // Abstract state invariants
+    //----------------------------------------------------------
+    // all predefined mailboxes (inbox, ..., sent) are distinct
+    inbox != drafts &&
+    inbox != trash &&
+    inbox != sent &&
+    drafts != trash &&
+    drafts != sent &&
 
-//     // none of the predefined mailboxes are in the set of user-defined mailboxes
+    // none of the predefined mailboxes are in the set of user-defined mailboxes
+    inbox !in userboxList &&
+    drafts !in userboxList &&
+    trash !in userboxList &&
+    sent !in userboxList &&
 
-//     //----------------------------------------------------------
-//     // Abstract-to-concrete state invariants
-//     //----------------------------------------------------------
-//     // userboxes is the set of mailboxes in userboxList
+    //----------------------------------------------------------
+    // Abstract-to-concrete state invariants
+    //----------------------------------------------------------
+    // userboxes is the set of mailboxes in userboxList
+    forall i :: 0 <= i < |userboxList| ==> userboxList[i] in userboxes
+  }
 
-//   }
+  constructor ()
+  {
+    inbox := new Mailbox("Inbox");
+    drafts := new Mailbox("Drafts");
+    trash := new Mailbox("Trash");
+    sent := new Mailbox("Sent");
+    userboxList := [];
+  }
 
-//   constructor ()
-//   {
-//     inbox := new Mailbox("Inbox");
-//     drafts := new Mailbox("Drafts");
-//     trash := new Mailbox("Trash");
-//     sent := new Mailbox("Sent");
-//     userboxList := [];
-//   }
+  // Deletes user-defined mailbox mb
+  method deleteMailbox(mb: Mailbox)
+  {
+    // userboxList := rem(mb, userboxList);
+  }
 
-//   // Deletes user-defined mailbox mb
-//   method deleteMailbox(mb: Mailbox)
-//   {
-//     userboxList := rem(mb, userboxList);
-//   }
+  // Adds a new mailbox with name n to set of user-defined mailboxes
+  // provided that no user-defined mailbox has name n already
+  method newMailbox(n: string)
+    modifies this
+    requires forall i :: 0 <= i < |userboxList| ==> userboxList[i].name != n
+  {
+    var mb := new Mailbox(n);
+    userboxList := [mb] + userboxList;
+  }
 
-//   // Adds a new mailbox with name n to set of user-defined mailboxes
-//   // provided that no user-defined mailbox has name n already
-//   method newMailbox(n: string)
-//   {
-//     var mb := new Mailbox(n);
-//     userboxList := [mb] + userboxList;
-//   }
+  // Adds a new message with sender s to the drafts mailbox
+  method newMessage(s: Address)
+    modifies this.drafts
+  {
+    var m := new Message(s);
+    drafts.add(m);
+  }
 
-//   // Adds a new message with sender s to the drafts mailbox
-//   method newMessage(s: Address)
-//   {
-//     var m := new Message(s);
-//     drafts.add(m);
-//   }
+  // Moves message m from mailbox mb1 to a different mailbox mb2
+  method moveMessage (m: Message, mb1: Mailbox, mb2: Mailbox)
+    modifies mb1, mb2
+  {
+    mb1.remove(m);
+    mb2.add(m);
+  }
 
-//   // Moves message m from mailbox mb1 to a different mailbox mb2
-//   method moveMessage (m: Message, mb1: Mailbox, mb2: Mailbox)
-//   {
-//     mb1.remove(m);
-//     mb2.add(m);
-//   }
+  // Moves message m from mailbox mb to the trash mailbox provided
+  // that mb is not the trash mailbox
+  method deleteMessage (m: Message, mb: Mailbox)
+    modifies m, mb, this.trash
+  {
+    moveMessage(m, mb, trash);
+  }
 
-//   // Moves message m from mailbox mb to the trash mailbox provided
-//   // that mb is not the trash mailbox
-//   method deleteMessage (m: Message, mb: Mailbox)
-//   {
-//     moveMessage(m, mb, trash);
-//   }
+  // Moves message m from the drafts mailbox to the sent mailbox
+  method sendMessage(m: Message)
+    modifies this.drafts, this.sent
+  {
+    moveMessage(m, drafts, sent);
+  }
 
-//   // Moves message m from the drafts mailbox to the sent mailbox
-//   method sendMessage(m: Message)
-//   {
-//     moveMessage(m, drafts, sent);
-//   }
-
-//   // Empties the trash mailbox
-//   method emptyTrash ()
-//   {
-//     trash.empty();
-//   }
-// }
+  // Empties the trash mailbox
+  method emptyTrash()
+    modifies this.trash
+  {
+    trash.empty();
+  }
+}
