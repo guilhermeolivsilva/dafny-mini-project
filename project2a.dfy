@@ -116,6 +116,7 @@ class Mailbox {
   // Removes message m from mailbox. m must not be in the mailbox.
   method remove(m: Message)
     modifies this
+    requires m in messages
     ensures m !in messages
     ensures messages == old(messages) - {m}
   {
@@ -185,6 +186,9 @@ class MailApp {
 
   // Deletes user-defined mailbox mb
   method deleteMailbox(mb: Mailbox)
+    requires Valid()
+    requires mb in userboxList
+    // ensures mb !in userboxList
   {
     // userboxList := rem(mb, userboxList);
   }
@@ -193,7 +197,9 @@ class MailApp {
   // provided that no user-defined mailbox has name n already
   method newMailbox(n: string)
     modifies this
-    requires forall i :: 0 <= i < |userboxList| ==> userboxList[i].name != n
+    requires Valid()
+    requires !exists mb | mb in userboxList :: mb.name == n
+    ensures exists mb | mb in userboxList :: mb.name == n
   {
     var mb := new Mailbox(n);
     userboxList := [mb] + userboxList;
@@ -202,6 +208,8 @@ class MailApp {
   // Adds a new message with sender s to the drafts mailbox
   method newMessage(s: Address)
     modifies this.drafts
+    requires Valid()
+    ensures exists m | m in drafts.messages :: m.sender == s
   {
     var m := new Message(s);
     drafts.add(m);
@@ -210,6 +218,11 @@ class MailApp {
   // Moves message m from mailbox mb1 to a different mailbox mb2
   method moveMessage (m: Message, mb1: Mailbox, mb2: Mailbox)
     modifies mb1, mb2
+    requires Valid()
+    requires m in mb1.messages
+    requires m !in mb2.messages
+    ensures m !in mb1.messages
+    ensures m in mb2.messages
   {
     mb1.remove(m);
     mb2.add(m);
@@ -219,6 +232,9 @@ class MailApp {
   // that mb is not the trash mailbox
   method deleteMessage (m: Message, mb: Mailbox)
     modifies m, mb, this.trash
+    requires Valid()
+    requires m in mb.messages
+    requires m !in trash.messages
   {
     moveMessage(m, mb, trash);
   }
@@ -226,6 +242,9 @@ class MailApp {
   // Moves message m from the drafts mailbox to the sent mailbox
   method sendMessage(m: Message)
     modifies this.drafts, this.sent
+    requires Valid()
+    requires m in drafts.messages
+    requires m !in sent.messages
   {
     moveMessage(m, drafts, sent);
   }
@@ -233,6 +252,8 @@ class MailApp {
   // Empties the trash mailbox
   method emptyTrash()
     modifies this.trash
+    requires Valid()
+    ensures trash.messages == {}
   {
     trash.empty();
   }
