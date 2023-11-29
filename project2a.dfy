@@ -10,13 +10,16 @@
 */
 
 
-// function rem<T(==)>(x: T, s: seq<T>): seq<T>
-//   decreases s
-//   ensures x !in rem(x, s)
-//   ensures forall i :: 0 <= i < |rem(x, s)| ==> rem(x, s)[i] in s
-//   ensures forall i :: 0 <= i < |s| && s[i] != x ==> s[i] in rem(x, s)
-// {
-// }
+function rem<T(==)>(x: T, s: seq<T>): seq<T>
+  decreases s
+  ensures x !in rem(x, s)
+  ensures forall i :: 0 <= i < |rem(x, s)| ==> rem(x, s)[i] in s
+  ensures forall i :: 0 <= i < |s| && s[i] != x ==> s[i] in rem(x, s)
+{
+  if |s| == 0 then []
+  else if s[0] == x then rem(x, s[1..])
+  else [s[0]] + rem(x, s[1..])
+}
 
 
 // The next three classes have a minimal class definition,
