@@ -5,7 +5,7 @@
 
   Mini Project 2 - Part B
 
-  Your name(s):
+  Your name(s): Guilherme de Oliveira Silva
   ===============================================
 */
 
@@ -32,15 +32,15 @@ class Buffer<T(0)>
 
   // class invariant
   ghost predicate Valid()
+    reads this
   {
     // concrete state invariants (to be provided)
-
+    0 <= this.front <= this.size < this.a.Length &&
 
     // connection between abstract and concrete state
     Capacity == a.Length &&
     size == |Contents| &&
-    Contents == if front + size < Capacity
-                then a[front .. front+size]
+    Contents == if front + size < Capacity then a[front .. front+size]
                 else a[front ..] + a[0 .. (front + size - Capacity)]
   }
 
@@ -50,31 +50,40 @@ class Buffer<T(0)>
     ensures Capacity == n
     ensures Valid()
   {
-
+    Contents := [];
+    Capacity := n;
+    this.a := new T[n];
+    this.size := 0;
+    this.front := 0;
   }
 
-  function isEmpty():bool
+  function isEmpty() : bool
+    reads this
     requires Valid()
     ensures isEmpty() <==> Contents == []
   {
-
+    this.size == 0
   }
 
-  function isFull():bool
+  function isFull() : bool
+    reads this
     requires Valid()
     ensures isFull() <==> |Contents| == Capacity
   {
-
+    this.size == a.Length
   }
 
   method get() returns (d: T)
+    modifies a
     requires Valid()
     requires !isEmpty()
     ensures Valid()
     ensures old(Contents) == [d] + Contents
     ensures Capacity == old(Capacity)
   {
-
+    var newArray := new T[a.Length];
+    var i : int := 0;
+    d := a[front];
   }
 
   method put(d: T)
