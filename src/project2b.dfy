@@ -32,7 +32,9 @@ class Buffer<T(0)>
 
   // class invariant
   ghost predicate Valid()
+    // Dafny somewhy requires both `reads this` and `reads this.a` to validate this predicate.
     reads this
+    reads this.a
   {
     // concrete state invariants (to be provided)
     0 <= this.front <= this.size < this.a.Length &&
@@ -58,6 +60,8 @@ class Buffer<T(0)>
   }
 
   function isEmpty() : bool
+    // `reads this.a` is required to use `Valid`.
+    reads this.a
     reads this
     requires Valid()
     ensures isEmpty() <==> Contents == []
@@ -66,6 +70,8 @@ class Buffer<T(0)>
   }
 
   function isFull() : bool
+    // `reads this.a` is required to use `Valid`.
+    reads this.a
     reads this
     requires Valid()
     ensures isFull() <==> |Contents| == Capacity
