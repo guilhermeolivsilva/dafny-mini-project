@@ -37,7 +37,9 @@ class Buffer<T(0)>
     reads this.a
   {
     // concrete state invariants (to be provided)
-    0 <= this.front <= this.size < this.a.Length &&
+    0 <= front < a.Length &&
+    front + size < 2 * a.Length &&
+    size <= a.Length &&
 
     // connection between abstract and concrete state
     Capacity == a.Length &&
@@ -54,51 +56,63 @@ class Buffer<T(0)>
   {
     Contents := [];
     Capacity := n;
-    this.a := new T[n];
-    this.size := 0;
-    this.front := 0;
+    a := new T[n];
+    size := 0;
+    front := 0;
   }
 
   function isEmpty() : bool
-    // `reads this.a` is required to use `Valid`.
-    reads this.a
+    reads this.a // `reads this.a` is required to use `Valid`.
     reads this
     requires Valid()
     ensures isEmpty() <==> Contents == []
   {
-    this.size == 0
+    size == 0
   }
 
   function isFull() : bool
-    // `reads this.a` is required to use `Valid`.
-    reads this.a
+    reads this.a // `reads this.a` is required to use `Valid`.
     reads this
     requires Valid()
     ensures isFull() <==> |Contents| == Capacity
   {
-    this.size == a.Length
+    size == a.Length
   }
 
   method get() returns (d: T)
-    modifies a
+    modifies this
     requires Valid()
     requires !isEmpty()
     ensures Valid()
     ensures old(Contents) == [d] + Contents
     ensures Capacity == old(Capacity)
   {
-    var newArray := new T[a.Length];
-    var i : int := 0;
     d := a[front];
+
+    if(front + 1 < a.Length) { front := front + 1; }
+    else { front := 0; }
+
+    size := size - 1;
+    Contents := Contents[1..];
   }
 
   method put(d: T)
+    modifies this.a
+    modifies this
     requires Valid()
     requires !isFull()
     ensures Valid()
     ensures Contents == old(Contents) + [d]
     ensures Capacity == old(Capacity)
   {
+    var positionToAdd : nat;
 
+    if(front + size < a.Length) { positionToAdd := front + size; }
+    else { positionToAdd := front + size - a.Length; }
+
+    a[positionToAdd] := d;
+
+    size := size + 1;
+    Contents := Contents + [d];
   }
 }
